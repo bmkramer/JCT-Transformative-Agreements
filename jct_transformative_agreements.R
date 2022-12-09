@@ -114,6 +114,9 @@ df_journals <- df_journals %>%
 df_institutions <- df_institutions %>%
   distinct()
 
+#General (base r) approach to identify duplicates: df1[duplicated(df1),]
+
+
 #write to file
 toFile(df_ta, "ta", path)
 toFile(df_journals, "journals", path)
