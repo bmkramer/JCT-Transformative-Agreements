@@ -95,7 +95,8 @@ df_ta <- df_ta %>%
 df <- df_ta
 #for troubleshooting
 #df <- df_ta[1:100,]
-df_res <- pmap(df, getData)
+df_res <- pmap(df, getData) %>%
+  set_names(df$esac_id_unique)
 
 #run 2022-12-09
 #errors: 
