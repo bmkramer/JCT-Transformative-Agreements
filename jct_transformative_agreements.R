@@ -9,34 +9,58 @@ toFile <- function(data, type, path) {
 }
 
 #define function to to extract data for each TA
+#include tryCatch to deal with errors when URL does not resolve
+#and report on issues with data types that raise warnings
 getData <- function(data_url, esac_id_unique, ...) {
-  df_data <- read_csv(data_url,
-                      col_types = cols(
-                        #specify type for all columns to prevent downstream matching errors
-                        `Journal Name` = col_character(),
-                        `ISSN (Print)` = col_character(),
-                        `ISSN (Online)` = col_character(),
-                        `Journal First Seen` = col_date(format = ""),
-                        `Journal Last Seen` = col_date(format = ""),
-                        `Institution Name` = col_character(),
-                        `ROR ID` = col_character(),
-                        `Institution First Seen` = col_date(format = ""),
-                        `Institution Last Seen` = col_date(format = ""))) %>%
-    janitor:::clean_names() %>%
-    mutate(esac_id_unique = esac_id_unique)
-  
-  df_data_journals <- df_data %>%
-    select(esac_id_unique, 1:5) %>%
-    filter(!is.na(journal_name)) #remove empty rows
-  
-  df_data_institutions <- df_data %>%
-    select(esac_id_unique, 6:9) %>%
-    filter(!(is.na(institution_name) & is.na(ror_id))) #remove empty rows
-  
-  res <- list(data_journals = df_data_journals,
-              data_institutions = df_data_institutions)
-  
-  return(res)
+  tryCatch(
+    {
+      df_data <- read_csv(data_url,
+                          col_types = cols(
+                            #specify type for all columns to prevent downstream matching errors
+                            `Journal Name` = col_character(),
+                            `ISSN (Print)` = col_character(),
+                            `ISSN (Online)` = col_character(),
+                            `Journal First Seen` = col_date(format = ""),
+                            `Journal Last Seen` = col_date(format = ""),
+                            `Institution Name` = col_character(),
+                            `ROR ID` = col_character(),
+                            `Institution First Seen` = col_date(format = ""),
+                            `Institution Last Seen` = col_date(format = ""))) %>%
+        janitor:::clean_names() %>%
+        mutate(esac_id_unique = esac_id_unique)
+      
+      df_data_journals <- df_data %>%
+        select(esac_id_unique, 1:5) %>%
+        filter(!is.na(journal_name)) #remove empty rows
+      
+      df_data_institutions <- df_data %>%
+        select(esac_id_unique, 6:9) %>%
+        filter(!(is.na(institution_name) & is.na(ror_id))) #remove empty rows
+      
+      res <- list(data_journals = df_data_journals,
+                  data_institutions = df_data_institutions)
+      
+      
+      return(res)
+    },
+    
+    error = function(cond) {
+      
+      message(paste0(esac_id_unique, " caused an error - check whether URL resolves"))
+      # Choose a return value in case of error
+      return(NULL)
+    },
+    warning = function(cond) {
+      
+      message(paste0(esac_id_unique, " caused a warning - check conflicting data types in online spreadsheet (will be imported as NA)"))
+      # Choose a return value in case of warning
+      return(NULL)
+    },
+    finally={
+      #prevent warning messages about unused connections (where URLs don't resolve)
+      closeAllConnections()
+    }
+  )    
 }
 
 
@@ -67,23 +91,24 @@ df_ta <- df_ta %>%
 
 
 #run function to extract data for each TA
-#TO DO add tryCatch, until then, run in chunks to prevent errors halting the function
-df <- df_ta[1:100,]
+#errors and warnings will include esac_id_unique to check and correct where needed
+df <- df_ta
+#for troubleshooting
+#df <- df_ta[1:100,]
 df_res <- pmap(df, getData)
-#df_resx <- pmap(df, getData)
 
-df_res <- append(df_res,
-                 df_resx)
-rm(df_resx)
+#run 2022-12-09
+#errors: 
+#eme2020crui_5 - file deleted
 
-#errors: 88  (file deleted) eme2020crui_5 
-#problems:
-#236 note in last seen column - no problem - done
-#275 first date in both j/i not formatted as date - replace - done
-#276 ditto
-#277 ditto
-#295 note in last seen column - no problem - done
+#warnings:
+#tf2020unit_2 - note in last seen column - no problem - done
+#cam2020kemoe_1 - first date in both j/i not formatted as date - replace - done
+#cam2020kemoe_2 - ditto
+#cam2020kemoe_3 - ditto
+#eme2020kemoe - note in last seen column - no problem - done
 
+#manual fix for case where dates not formatted correctly in first row 
 datex <- as.Date("2022-11-18")
 df_resx[[1]][["data_institutions"]][1,4] <- datex
 df_resx[[1]][["data_journals"]][1,5] <- datex
