@@ -1,2 +1,2 @@
 # jct_transformative_agreements
-relational tables of JCT data on transformative agreements
+Creating relational tables of JCT data on transformative agreements
