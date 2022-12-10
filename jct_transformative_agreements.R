@@ -109,11 +109,15 @@ df_res <- pmap(df, getData) %>%
 #cam2020kemoe_3 - ditto
 #eme2020kemoe - note in last seen column - no problem - done
 
-#manual fix for case where dates not formatted correctly in first row 
-datex <- as.Date("2022-11-18")
-df_resx[[1]][["data_institutions"]][1,4] <- datex
-df_resx[[1]][["data_journals"]][1,5] <- datex
+#manual fix for cases where dates not formatted correctly in first row 
+id <- "cam2020kemoe_1" #copy id from warning message
+id <- "eme2020crui_3" #copy id from warning message
+date_corrected <- as.Date("2022-11-18") #copy date from online spreadsheet (link in df_ta)
 
+df_res[[id]][["data_institutions"]][1,4] <- date_corrected
+df_res[[id]][["data_journals"]][1,5] <- date_corrected
+
+#as precaution, also save list as RDS object
 saveRDS(df_res, "data/df_res.RDS")
 
 #collate data for journals and institutions
