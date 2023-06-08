@@ -15,6 +15,7 @@ getData <- function(data_url, esac_id_unique, ...) {
   tryCatch(
     {
       df_data <- read_csv(data_url,
+                          na = na_defined,
                           col_types = cols(
                             #specify type for all columns to prevent downstream matching errors
                             `Journal Name` = col_character(),
@@ -93,10 +94,31 @@ df_ta <- df_ta %>%
 #run function to extract data for each TA
 #errors and warnings will include esac_id_unique to check and correct where needed
 df <- df_ta
+#specify na_defined for strings to consider NA (processing error messages)
+#na_defined <- c("", "NA") #read_csv default
+na_defined <- c("", "NA", "Valid From", "OA", ".", "Open Access")
+
 #for troubleshooting
-#df <- df_ta[1:100,]
+#df <- df_ta[1:10]
 df_res <- pmap(df, getData) %>%
   set_names(df$esac_id_unique)
+
+#run 2023-06-07
+#errors: 1
+#eme2020crui_5 - file deleted
+
+#warnings: 4 - all NULL in list due to badly formatted date entries
+#eme2021bibsam "Valid From"
+#wiley2020crui - "."
+#wiley2023btaa - "OA"
+#wiley2021iowa - "Open Access
+
+#identify strings to consider as missing values and rerun
+#always also include "")
+#na_defined <- c("", "Valid From", "OA", ".", "Open Access")
+
+#Consider to replace invalid dates (see procedure below) or leave empty -> leave empty for now
+
 
 #run 2022-12-09
 #errors: 
@@ -118,7 +140,7 @@ df_res[[id]][["data_institutions"]][1,4] <- date_corrected
 df_res[[id]][["data_journals"]][1,5] <- date_corrected
 
 #as precaution, also save list as RDS object
-saveRDS(df_res, "data/df_res.RDS")
+#saveRDS(df_res, "data/df_res.RDS")
 
 #collate data for journals and institutions
 df_journals <- map_dfr(df_res, "data_journals")
@@ -144,7 +166,7 @@ df_journals <- df_journals %>%
 df_institutions <- df_institutions %>%
   distinct()
 
-#General (base r) approach to identify duplicates: df1[duplicated(df1),]
+#NB General (base r) approach to identify duplicates: df1[duplicated(df1),]
 
 
 #write to file
