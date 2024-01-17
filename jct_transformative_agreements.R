@@ -94,50 +94,52 @@ df_ta <- df_ta %>%
 #run function to extract data for each TA
 #errors and warnings will include esac_id_unique to check and correct where needed
 df <- df_ta
-#specify na_defined for strings to consider NA (processing error messages)
+#specify na_defined for strings to consider NA (from previous processing error messages)
 #na_defined <- c("", "NA") #read_csv default
-na_defined <- c("", "NA", "Valid From", "OA", ".", "Open Access")
+na_defined <- c("", "NA", "Valid From", "OA", ".", "Open Access", "Premier")
 
 #for troubleshooting
-#df <- df_ta[1:10]
+#df <- df_ta[1:10,]
 df_res <- pmap(df, getData) %>%
   set_names(df$esac_id_unique)
 
-#run 2023-06-07
-#errors: 1
-#eme2020crui_5 - file deleted
+#run 2024-01-17 with expanded na_defined
+#errors (all NULL in list)
+#none
+#warnings (all NULL in list)
+#wiley2021vsnu - Journal first seen misformed
 
-#warnings: 4 - all NULL in list due to badly formatted date entries
-#eme2021bibsam "Valid From"
-#wiley2020crui - "."
-#wiley2023btaa - "OA"
-#wiley2021iowa - "Open Access
 
 #identify strings to consider as missing values and rerun
 #always also include "")
-#na_defined <- c("", "Valid From", "OA", ".", "Open Access")
+#na_defined <- c("", "Valid From", "OA", ".", "Open Access", "Premier)
 
 #Consider to replace invalid dates (see procedure below) or leave empty -> leave empty for now
 
-
-#run 2022-12-09
-#errors: 
-#eme2020crui_5 - file deleted
-
-#warnings:
-#tf2020unit_2 - note in last seen column - no problem - done
-#cam2020kemoe_1 - first date in both j/i not formatted as date - replace - done
-#cam2020kemoe_2 - ditto
-#cam2020kemoe_3 - ditto
-#eme2020kemoe - note in last seen column - no problem - done
-
 #manual fix for cases where dates not formatted correctly in first row 
-id <- "cam2020kemoe_1" #copy id from warning message
-id <- "eme2020crui_3" #copy id from warning message
-date_corrected <- as.Date("2022-11-18") #copy date from online spreadsheet (link in df_ta)
+#id <- "cam2020kemoe_1" #copy id from warning message
+#id <- "eme2020crui_3" #copy id from warning message
+#date_corrected <- as.Date("2022-11-18") #copy date from online spreadsheet (link in df_ta)
 
-df_res[[id]][["data_institutions"]][1,4] <- date_corrected
-df_res[[id]][["data_journals"]][1,5] <- date_corrected
+#df_res[[id]][["data_institutions"]][1,4] <- date_corrected
+#df_res[[id]][["data_journals"]][1,5] <- date_corrected
+
+#replace malformed dates in wiley2021vsnu (20240117)
+id <- "wiley2021vsnu"
+df_retry <- df %>%
+  filter(esac_id_unique == id)
+#temporarily replace `Journal First Seen` = col_character in getData,
+#rerun 
+df_res_retry <- pmap(df_retry, getData) %>%
+  set_names(df_retry$esac_id_unique)
+#replace date in df
+df_new <- df_res_retry[[id]][["data_journals"]] %>%
+  mutate(journal_first_seen = str_replace(journal_first_seen, "20223", "2023")) %>%
+  mutate(journal_first_seen = as.Date(journal_first_seen))
+#replace df in list
+df_res_retry[[id]][["data_journals"]] <- df_new
+#replace entry in list
+df_res[[id]] <- df_res_retry[[id]]
 
 #as precaution, also save list as RDS object
 #saveRDS(df_res, "data/df_res.RDS")
