@@ -103,16 +103,26 @@ na_defined <- c("", "NA", "Valid From", "OA", ".", "Open Access", "Premier")
 df_res <- pmap(df, getData) %>%
   set_names(df$esac_id_unique)
 
-#run 2024-01-17 with expanded na_defined
+#run 2024-10-11 with expanded na_defined
 #errors (all NULL in list)
-#none
+#compbio2023gc 
 #warnings (all NULL in list)
-#wiley2021vsnu - Journal first seen misformed
+#wiley2024deal
+#trs2024jisc
+#oxf2024ukb 
+#wiley2024carli
+#wiley2022crue 
+#ieee2022hkbu
+#jbp2022tilburg
+#jbp2023ru
+#rsc2024csal
+#ieee2023fg
+#cam2024julac_2
+#ieee2022crui
+#ieee2022heal
+#brill2024malmad
+#brill2023csic
 
-
-#identify strings to consider as missing values and rerun
-#always also include "")
-#na_defined <- c("", "Valid From", "OA", ".", "Open Access", "Premier)
 
 #Consider to replace invalid dates (see procedure below) or leave empty -> leave empty for now
 
@@ -125,24 +135,24 @@ df_res <- pmap(df, getData) %>%
 #df_res[[id]][["data_journals"]][1,5] <- date_corrected
 
 #replace malformed dates in wiley2021vsnu (20240117)
-id <- "wiley2021vsnu"
-df_retry <- df %>%
-  filter(esac_id_unique == id)
+#id <- "wiley2021vsnu"
+#df_retry <- df %>%
+#  filter(esac_id_unique == id)
 #temporarily replace `Journal First Seen` = col_character in getData,
 #rerun 
-df_res_retry <- pmap(df_retry, getData) %>%
-  set_names(df_retry$esac_id_unique)
+#df_res_retry <- pmap(df_retry, getData) %>%
+#  set_names(df_retry$esac_id_unique)
 #replace date in df
-df_new <- df_res_retry[[id]][["data_journals"]] %>%
-  mutate(journal_first_seen = str_replace(journal_first_seen, "20223", "2023")) %>%
-  mutate(journal_first_seen = as.Date(journal_first_seen))
+#df_new <- df_res_retry[[id]][["data_journals"]] %>%
+#  mutate(journal_first_seen = str_replace(journal_first_seen, "20223", "2023")) %>%
+#  mutate(journal_first_seen = as.Date(journal_first_seen))
 #replace df in list
-df_res_retry[[id]][["data_journals"]] <- df_new
+#df_res_retry[[id]][["data_journals"]] <- df_new
 #replace entry in list
-df_res[[id]] <- df_res_retry[[id]]
+#df_res[[id]] <- df_res_retry[[id]]
 
 #as precaution, also save list as RDS object
-#saveRDS(df_res, "data/df_res.RDS")
+saveRDS(df_res, "data/df_res.RDS")
 
 #collate data for journals and institutions
 df_journals <- map_dfr(df_res, "data_journals")
